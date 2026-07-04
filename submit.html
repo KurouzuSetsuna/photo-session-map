@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>写真展情報の投稿 - 撮影会マップ</title>
+    <meta name="description" content="写真展情報を投稿して、撮影会マップに掲載できます。管理者の承認後、地図に表示されます。">
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/submit.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>写真展情報の投稿</h1>
+        <p class="subtitle">写真展の情報を共有して、撮影会マップを充実させましょう</p>
+    </header>
+
+    <div class="notice">
+        <strong>📝 投稿について</strong>
+        投稿いただいた情報は管理者が内容を確認した後、地図に掲載させていただきます。<br>
+        掲載の可否に関するご連絡や、掲載をお見送りする場合の理由のお知らせは行っておりません。予めご了承ください。<br>
+        掲載までお時間をいただく場合がございます。
+    </div>
+
+    <div class="notice" style="background-color: #fff3cd; border-left-color: #ffc107;">
+        <strong>🛡️ 申請者情報について</strong>
+        悪質な行為の防止、誹謗中傷や不適切な投稿を防ぐため、申請者情報の入力をお願いしております。<br>
+        入力いただいた情報は管理者のみが確認し、一般には公開されません。
+    </div>
+
+    <div class="form-container">
+        <div id="alertContainer"></div>
+
+        <form id="submitForm">
+            <h3 style="margin-top: 0;">申請者情報</h3>
+
+            <div class="form-group">
+                <label for="submitter_name">お名前（アカウント名・写真家名・モデル名など） <span class="required">*</span></label>
+                <input type="text" id="submitter_name" name="submitter_name" required>
+                <p class="help-text">通常お使いの名前やアカウント名をご入力ください</p>
+            </div>
+
+            <div class="form-group">
+                <label for="submitter_social_url">XまたはInstagramのURL <span class="required">*</span></label>
+                <input type="url" id="submitter_social_url" name="submitter_social_url" required placeholder="https://twitter.com/... または https://instagram.com/...">
+                <p class="help-text">XまたはInstagramのプロフィールURLをご入力ください</p>
+            </div>
+
+            <div class="form-group">
+                <label for="submitter_email">メールアドレス <span class="required">*</span></label>
+                <input type="email" id="submitter_email" name="submitter_email" required placeholder="example@example.com">
+                <p class="help-text">連絡可能なメールアドレスをご入力ください</p>
+            </div>
+
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #eee;">
+
+            <h3>写真展情報</h3>
+
+            <div class="form-group">
+                <label for="exhibition_name">写真展名 <span class="required">*</span></label>
+                <input type="text" id="exhibition_name" name="exhibition_name" required>
+                <p class="help-text">例: 〇〇写真展、〇〇フォトギャラリー</p>
+            </div>
+
+            <div class="form-group">
+                <label for="address">住所 <span class="required">*</span></label>
+                <input type="text" id="address" name="address" required>
+                <p class="help-text">例: 東京都渋谷区〇〇1-2-3</p>
+            </div>
+
+            <div class="form-group">
+                <label>会期 <span class="required">*</span></label>
+                <p class="help-text">写真展の開催期間を入力してください。1日のみの場合は同じ日付を入力してください。</p>
+                <div class="coordinate-group">
+                    <div>
+                        <label for="start_date" style="font-weight: normal;">開始日</label>
+                        <input type="date" id="start_date" name="start_date" required>
+                    </div>
+                    <div>
+                        <label for="end_date" style="font-weight: normal;">終了日</label>
+                        <input type="date" id="end_date" name="end_date" required>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                <label>緯度・経度 <span class="required">*</span></label>
+                <p class="help-text">
+                    地図をクリックして位置を指定してください。<br>
+                    緯度・経度がわからない場合は、<a href="https://www.geocoding.jp/" target="_blank" rel="noopener noreferrer">こちらのサービス</a>で住所から緯度・経度を調べることができます。
+                </p>
+                <div id="map"></div>
+                <div class="coordinate-group" style="margin-top: 10px;">
+                    <div>
+                        <input type="number" id="latitude" name="latitude" step="any" placeholder="緯度" required readonly>
+                    </div>
+                    <div>
+                        <input type="number" id="longitude" name="longitude" step="any" placeholder="経度" required readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="url">URL（任意）</label>
+                <input type="url" id="url" name="url" placeholder="https://example.com/">
+                <p class="help-text">写真展の公式サイトやSNSのURLを入力してください</p>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">送信</button>
+                <a href="index.html" class="btn btn-secondary">キャンセル</a>
+            </div>
+        </form>
+    </div>
+
+    <footer>
+        <p><a href="index.html">← 地図に戻る</a></p>
+    </footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/submit.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>撮影会マップ - Photo Session Map</title>
+    <meta name="description" content="撮影会の開催スケジュールと場所を地図上で一目で確認できるサービスです。日付、撮影会、スタジオでフィルタリングが可能です。">
+    <meta name="google-adsense-account" content="ca-pub-7714498305797826">
+
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.ico">
+
+    <!-- OGP Tags -->
+    <meta property="og:title" content="撮影会マップ - Photo Session Map">
+    <meta property="og:description" content="撮影会の開催スケジュールと場所を地図上で一目で確認できるサービスです。">
+    <meta property="og:image" content="https://kurouzusetsuna.github.io/photo-session-map/ogp.png">
+    <meta property="og:url" content="https://kurouzusetsuna.github.io/photo-session-map/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="撮影会マップ">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="撮影会マップ - Photo Session Map">
+    <meta name="twitter:description" content="撮影会の開催スケジュールと場所を地図上で一目で確認できるサービスです。">
+    <meta name="twitter:image" content="https://kurouzusetsuna.github.io/photo-session-map/ogp.png">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NKQEVZES10"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-NKQEVZES10');
+    </script>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7714498305797826" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="css/index.css">
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        header {
+            background: white;
+            color: #4A4A4A;
+            padding: 40px 30px 30px;
+            text-align: center;
+            border-bottom: 1px solid #F0EDE8;
+            position: relative;
+        }
+
+        .menu-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 30px;
+        }
+
+        .menu-button span {
+            display: block;
+            width: 100%;
+            height: 3px;
+            background: #4A4A4A;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .menu-button.active span:nth-child(1) {
+            transform: rotate(45deg) translate(8px, 8px);
+        }
+
+        .menu-button.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-button.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 320px;
+            max-width: 85%;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .side-drawer.open {
+            right: 0;
+        }
+
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0,0,0,0.4);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 999;
+        }
+
+        .drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .drawer-header {
+            padding: 30px 20px;
+            border-bottom: 1px solid #F0EDE8;
+        }
+
+        .drawer-header h2 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #4A4A4A;
+            margin: 0;
+        }
+
+        .drawer-content {
+            padding: 20px;
+        }
+
+        .session-card {
+            padding: 15px;
+            background: #FAF8F5;
+            border-radius: 4px;
+            border-left: 3px solid #D4A5A5;
+            margin-bottom: 15px;
+        }
+
+        .session-card h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #4A4A4A;
+            margin: 0 0 8px 0;
+        }
+
+        .session-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+        }
+
+        .session-badge.freelance {
+            background: #E8D5C4;
+            color: #4A4A4A;
+        }
+
+        .session-badge.company {
+            background: #D4A5A5;
+            color: white;
+        }
+
+        .session-links {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .session-link {
+            color: #D4A5A5;
+            text-decoration: none;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .session-link:hover {
+            color: #C89090;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #9B8B7E;
+            font-weight: 400;
+        }
+
+        .controls {
+            padding: 30px;
+            background: white;
+            border-bottom: 1px solid #F0EDE8;
+        }
+
+        .date-filter {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .date-filter label {
+            font-weight: 400;
+            color: #6B6B6B;
+            font-size: 0.9rem;
+        }
+
+        .date-filter input[type="date"],
+        .date-filter select {
+            padding: 10px 16px;
+            border: 1px solid #E0D8D0;
+            border-radius: 2px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            background: #FEFEFE;
+        }
+
+        .date-filter input[type="date"]:focus,
+        .date-filter select:focus {
+            outline: none;
+            border-color: #D4A5A5;
+            background: white;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 2px;
+            font-size: 0.9rem;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+
+        .btn-primary {
+            background: #D4A5A5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #C89090;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(212, 165, 165, 0.3);
+        }
+
+        .btn-secondary {
+            background: #E8D5C4;
+            color: #6B6B6B;
+        }
+
+        .btn-secondary:hover {
+            background: #DCC5B0;
+        }
+
+        .info-panel {
+            padding: 16px 30px;
+            background: #F9F7F4;
+            border-bottom: 1px solid #F0EDE8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .session-count {
+            font-weight: 400;
+            color: #6B6B6B;
+            font-size: 0.9rem;
+        }
+
+        .map-container {
+            display: flex;
+            gap: 20px;
+            padding: 0;
+            background: white;
+        }
+
+        .map-wrapper {
+            flex: 1;
+            min-width: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 600px;
+        }
+
+        .sidebar {
+            width: 300px;
+            padding: 20px;
+            background: #FAF8F5;
+            border-left: 1px solid #F0EDE8;
+        }
+
+        .ad-container {
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .footer-ad {
+            padding: 30px;
+            background: white;
+            border-top: 1px solid #F0EDE8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .leaflet-popup-content {
+            margin: 15px;
+        }
+
+        .popup-title {
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: #4A4A4A;
+            margin-bottom: 8px;
+        }
+
+        .popup-info {
+            font-size: 0.85rem;
+            color: #6B6B6B;
+            line-height: 1.6;
+        }
+
+        .popup-sessions {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #F0EDE8;
+        }
+
+        .popup-session-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: #FAF8F5;
+            border-radius: 2px;
+            border-left: 2px solid #D4A5A5;
+        }
+
+        .popup-link {
+            display: inline-block;
+            margin-top: 6px;
+            color: #D4A5A5;
+            text-decoration: none;
+            font-weight: 400;
+            font-size: 0.85rem;
+        }
+
+        .popup-link:hover {
+            color: #C89090;
+        }
+
+        footer {
+            padding: 24px 30px;
+            text-align: center;
+            color: #9B8B7E;
+            font-size: 0.85rem;
+            background: white;
+            font-weight: 300;
+        }
+
+        /* Flatpickr カスタムスタイル */
+        .flatpickr-day.disabled {
+            color: #D0D0D0 !important;
+            cursor: not-allowed !important;
+        }
+
+        .flatpickr-day.disabled:hover {
+            background: transparent !important;
+            border-color: transparent !important;
+        }
+
+        .flatpickr-day.selected,
+        .flatpickr-day.startRange,
+        .flatpickr-day.endRange {
+            background: #D4A5A5 !important;
+            border-color: #D4A5A5 !important;
+        }
+
+        .flatpickr-day:hover:not(.disabled) {
+            background: #E8D5C4 !important;
+            border-color: #E8D5C4 !important;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .container {
+                border-radius: 0;
+            }
+
+            header {
+                padding: 30px 20px 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .menu-button {
+                top: 15px;
+                right: 15px;
+            }
+
+            .controls {
+                padding: 24px 20px;
+            }
+
+            .date-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .date-filter input,
+            .date-filter select,
+            .date-filter button {
+                width: 100%;
+            }
+
+            .map-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid #F0EDE8;
+            }
+
+            #map {
+                height: 400px;
+            }
+
+            .side-drawer {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .session-card {
+                padding: 12px;
+            }
+
+            .session-links {
+                flex-direction: column;
+                gap: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- サイドドロワー -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <h2>登録されている撮影会</h2>
+        </div>
+        <div class="drawer-content" id="drawerContent">
+            <p style="text-align: center; color: #9B8B7E;">読み込み中...</p>
+        </div>
+    </div>
+
+    <header>
+        <button class="menu-button" id="menuButton" onclick="toggleDrawer()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <h1>撮影会マップ</h1>
+        <p class="subtitle">開催スケジュールと場所を一目で確認</p>
+    </header>
+
+    <div class="controls">
+        <div class="date-filter">
+            <label for="dateInput">日付で絞り込み</label>
+            <input type="date" id="dateInput">
+            <label for="eventTypeFilter">種別</label>
+            <select id="eventTypeFilter">
+                <option value="">全て</option>
+                <option value="photo_session">撮影会</option>
+                <option value="photo_exhibition">写真展</option>
+            </select>
+            <label for="organizerFilter">撮影会</label>
+            <select id="organizerFilter">
+                <option value="">全て</option>
+            </select>
+            <label for="studioFilter">スタジオ</label>
+            <select id="studioFilter">
+                <option value="">全て</option>
+            </select>
+            <button class="btn btn-primary" onclick="applyFilters()">表示</button>
+            <button class="btn btn-secondary" onclick="resetFilters()">全て表示</button>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div class="session-count" id="sessionCount">読み込み中...</div>
+        <div style="font-size: 0.85rem; color: #9B8B7E;">ピンをクリックして詳細を表示</div>
+    </div>
+
+    <div class="map-container">
+        <div class="map-wrapper">
+            <div id="map"></div>
+        </div>
+        <aside class="sidebar">
+            <div class="ad-container">
+                <!-- サイドバー広告(撮影会マップ) -->
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-7714498305797826"
+                     data-ad-slot="8817928595"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </aside>
+    </div>
+
+    <div class="footer-ad">
+        <!-- フッター上部広告(撮影会マップ) -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-7714498305797826"
+             data-ad-slot="5784571148"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+
+    <footer>
+        <p>データはデータベースで管理されています。最新情報は各主催者サイトをご確認ください。</p>
+        <p style="margin-top: 10px;"><a href="submit.html" style="color: #D4A5A5; text-decoration: none;">写真展情報を投稿する →</a></p>
+    </footer>
+</div>
+
+<!-- モバイルアンカー広告(撮影会マップ) -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-7714498305797826"
+     data-ad-slot="6191765252"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ja.js"></script>
+
+
+<script src="js/index.js"></script>
+
+</body>
+</html>

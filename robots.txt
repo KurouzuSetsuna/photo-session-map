@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kurouzusetsuna.github.io/photo-session-map/sitemap.xml
